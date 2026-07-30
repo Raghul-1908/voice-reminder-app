@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Voice Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #020617;
+            --accent: #818cf8;
+            --aurora: #c084fc;
+            --glass: rgba(15, 23, 42, 0.7);
+            --danger: #fb7185;
+        }
+
+        body { 
+            background-color: var(--bg-deep);
+            color: #f8fafc; 
+            font-family: 'Outfit', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+        }
+
+        .ambient-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at 20% 30%, #1e1b4b 0%, transparent 40%),
+                        radial-gradient(circle at 80% 70%, #2e1065 0%, transparent 40%);
+        }
+
+        .aurora-blob {
+            position: absolute;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(129, 140, 248, 0.12) 0%, transparent 70%);
+            filter: blur(60px);
+            border-radius: 50%;
+            animation: drift 25s infinite alternate ease-in-out;
+        }
+
+        @keyframes drift {
+            from { transform: translate(-20%, -20%) scale(1); }
+            to { transform: translate(30%, 30%) scale(1.2); }
+        }
+
+        .oracle-sphere {
+            position: relative;
+            width: 220px; height: 220px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .oracle-sphere:hover { transform: scale(1.05); }
+        .oracle-sphere:active { transform: scale(0.92); }
+
+        .sphere-core {
+            width: 160px; height: 160px;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            z-index: 2;
+            box-shadow: 0 0 50px rgba(99, 102, 241, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sphere-ring {
+            position: absolute;
+            width: 100%; height: 100%;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: spin 8s linear infinite;
+        }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .listening-glow {
+            animation: pulse-red 1.5s infinite;
+            background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0px rgba(244, 63, 94, 0.5); }
+            70% { box-shadow: 0 0 0 40px rgba(244, 63, 94, 0); }
+            100% { box-shadow: 0 0 0 0px rgba(244, 63, 94, 0); }
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 3rem;
+            padding: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .task-item {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 2.5rem;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .task-item::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 20%; bottom: 20%;
+            width: 6px; background: var(--accent);
+            border-radius: 0 10px 10px 0;
+            box-shadow: 0 0 15px var(--accent);
+        }
+
+        .task-item.due {
+            background: rgba(244, 63, 94, 0.1);
+            border-color: rgba(244, 63, 94, 0.3);
+            animation: alert-border 1s infinite alternate;
+        }
+
+        @keyframes alert-border {
+            from { border-color: rgba(244, 63, 94, 0.3); }
+            to { border-color: rgba(244, 63, 94, 0.8); }
+        }
+
+        .delete-btn {
+            width: 4.5rem; height: 4.5rem;
+            background: rgba(244, 63, 94, 0.1);
+            color: #fb7185;
+            border-radius: 1.5rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; transition: all 0.2s;
+            border: 1px solid rgba(244, 63, 94, 0.2);
+        }
+
+        .delete-btn:hover { background: #f43f5e; color: white; transform: rotate(90deg); }
+
+        .label-text {
+            font-size: 0.75rem; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 0.2em; color: var(--accent); margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-12">
+    <div class="ambient-bg">
+        <div class="aurora-blob" style="top: 0; left: 0;"></div>
+        <div class="aurora-blob" style="bottom: 0; right: 0; animation-delay: -5s;"></div>
+    </div>
+
+    <div class="max-w-3xl w-full space-y-12">
+        <header class="text-center pt-6">
+            <h1 class="text-6xl md:text-7xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-slate-400 uppercase">
+                Assistant
+            </h1>
+            <p class="text-indigo-300 font-bold uppercase tracking-[0.4em] text-sm mt-2 opacity-60">Personal Local AI</p>
+        </header>
+
+        <div class="space-y-10">
+            <div class="oracle-sphere" id="start-btn">
+                <div class="sphere-ring"></div>
+                <div class="sphere-ring" style="animation-duration: 12s; direction: reverse;"></div>
+                <div class="sphere-core" id="sphere-core">🎤</div>
+            </div>
+            
+            <div id="listening-hint" class="text-center hidden">
+                <p class="text-rose-400 font-black text-2xl uppercase tracking-[0.2em] animate-pulse">Listening...</p>
+            </div>
+
+            <div class="glass-card p-10 text-center">
+                <h2 class="label-text">Response</h2>
+                <p id="speech-result" class="text-3xl md:text-4xl font-semibold leading-tight text-white italic opacity-90">
+                    "Tap to begin..."
+                </p>
+            </div>
+        </div>
+
+        <section class="space-y-8 pb-20">
+            <div class="flex items-center justify-between px-4">
+                <h3 class="text-3xl font-black uppercase tracking-tighter flex items-center gap-4">
+                    <span class="w-3 h-10 bg-indigo-500 rounded-full shadow-[0_0_15px_#6366f1]"></span>
+                    Your Schedule
+                </h3>
+                <span id="task-count" class="bg-indigo-500/20 text-indigo-300 px-5 py-2 rounded-full text-sm font-black border border-indigo-500/30">0 ACTIVE</span>
+            </div>
+
+            <div id="reminder-list" class="space-y-6">
+                </div>
+        </section>
+    </div>
+
+    <div id="alert-modal" class="fixed inset-0 bg-slate-950/98 backdrop-blur-3xl flex items-center justify-center hidden z-50 p-6">
+        <div class="bg-white p-12 md:p-16 rounded-[4rem] w-full max-w-xl text-center shadow-[0_0_100px_rgba(99,102,241,0.4)]">
+            <div class="w-28 h-28 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-10">
+                <span class="text-6xl">🔔</span>
+            </div>
+            <h4 class="text-xl font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Reminder</h4>
+            <p id="alert-text" class="text-5xl font-black text-slate-900 mb-14 leading-tight uppercase tracking-tighter"></p>
+            <button id="close-alert" class="w-full bg-indigo-600 text-white py-8 text-3xl font-black rounded-[2rem] shadow-2xl hover:bg-indigo-700 transition-all">
+                DISMISS
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const BACKEND_URL = "http://localhost:5000";
+        let lastRenderedJson = "";
+        let audioUnlocked = false;
+
+        const startBtn = document.getElementById('start-btn');
+        const sphereCore = document.getElementById('sphere-core');
+        const listeningHint = document.getElementById('listening-hint');
+        const speechResult = document.getElementById('speech-result');
+        const reminderList = document.getElementById('reminder-list');
+        const alertModal = document.getElementById('alert-modal');
+        const alertText = document.getElementById('alert-text');
+        const closeAlert = document.getElementById('close-alert');
+        const taskCountDisplay = document.getElementById('task-count');
+
+        function speak(text) {
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.rate = 0.9;
+            window.speechSynthesis.speak(msg);
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = SpeechRecognition ? new SpeechRecognition() : null;
+
+        if (recognition) {
+            recognition.onstart = () => {
+                sphereCore.classList.add('listening-glow');
+                listeningHint.classList.remove('hidden');
+            };
+            recognition.onend = () => {
+                sphereCore.classList.remove('listening-glow');
+                listeningHint.classList.add('hidden');
+            };
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                handleVoiceCommand(transcript);
+            };
+        }
+
+        startBtn.onclick = () => {
+            if (!audioUnlocked) { audioUnlocked = true; new Audio().play().catch(()=>{}); }
+            window.speechSynthesis.cancel();
+            recognition && recognition.start();
+        };
+
+        async function handleVoiceCommand(text) {
+            speechResult.innerText = "Thinking...";
+            try {
+                const res = await fetch(`${BACKEND_URL}/personal-ai`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text })
+                });
+                const data = await res.json();
+                speechResult.innerText = data.reply;
+                speak(data.reply);
+                updateDisplay();
+            } catch (err) {
+                speechResult.innerText = "Error connecting to local server.";
+            }
+        }
+
+        async function updateDisplay() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/list`);
+                const data = await res.json();
+                renderList(data);
+                data.forEach(r => { if(r.status === 'due') triggerEliteAlert(r); });
+            } catch (e) {}
+        }
+
+        function renderList(list) {
+            const currentJson = JSON.stringify(list);
+            if (currentJson === lastRenderedJson) return;
+            lastRenderedJson = currentJson;
+
+            taskCountDisplay.innerText = `${list.length} ACTIVE`;
+            if (list.length === 0) {
+                reminderList.innerHTML = `<div class="text-center py-20 opacity-20"><p class="text-3xl italic">No active reminders.</p></div>`;
+                return;
+            }
+            
+            reminderList.innerHTML = '';
+            list.forEach(r => {
+                const isDue = r.status === 'due';
+                const d = new Date(r.time);
+                const timeS = !isNaN(d.getTime()) ? d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : "??";
+                
+                const card = document.createElement('div');
+                card.className = `task-item ${isDue ? 'due' : ''}`;
+                card.innerHTML = `
+                    <div class="flex-1 overflow-hidden pr-6">
+                        <div class="label-text">Task</div>
+                        <div class="text-3xl font-black truncate ${isDue ? 'text-rose-400' : 'text-white'} mb-2">${r.text}</div>
+                        <div class="text-xl font-bold text-indigo-400">${timeS}</div>
+                    </div>
+                    <button class="delete-btn" onclick="deleteReminder('${r.id}')">✕</button>
+                `;
+                reminderList.appendChild(card);
+            });
+        }
+
+        async function deleteReminder(id) {
+            await fetch(`${BACKEND_URL}/acknowledge`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            updateDisplay();
+        }
+
+        function triggerEliteAlert(reminder) {
+            if (!alertModal.classList.contains('hidden')) return;
+            alertText.innerText = reminder.text;
+            alertModal.classList.remove('hidden');
+            speak(`Excuse me, your reminder: ${reminder.text}`);
+            closeAlert.onclick = async () => {
+                await deleteReminder(reminder.id);
+                alertModal.classList.add('hidden');
+            };
+        }
+
+        setInterval(updateDisplay, 2000);
+        updateDisplay();
+    </script>
+</body>
+</html>
